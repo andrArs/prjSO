@@ -1,0 +1,27 @@
+file2.txt -> Fisier
+Drepturi: rw-r--r--
+File: dir1/file2.txt
+Size: 2 bytes
+Last modified time: Wed May  8 18:23:30 2024
+Path: dir1/file2.txt
+st_mode: 33188
+
+
+dir11 -> Director
+Drepturi: rwxr-xr-x
+File: dir1/dir11
+Size: 4096 bytes
+Last modified time: Fri May 10 23:01:10 2024
+Path: dir1/dir11
+st_mode: 16877
+
+
+file1.txt -> Fisier
+Drepturi: rw-r--r--
+File: dir1/dir11/file1.txt
+Size: 4 bytes
+Last modified time: Wed May  8 18:23:48 2024
+Path: dir1/dir11/file1.txt
+st_mode: 33188
+
+

@@ -1,0 +1,18 @@
+file5.txt -> Fisier
+Drepturi: rw-r--r--
+File: dir3/file5.txt
+Size: 39 bytes
+Last modified time: Sat May 11 01:08:47 2024
+Path: dir3/file5.txt
+st_mode: 33188
+
+
+file6.txt -> Fisier
+Drepturi: rw-r--r--
+File: dir3/file6.txt
+Size: 10 bytes
+Last modified time: Wed May  8 18:24:22 2024
+Path: dir3/file6.txt
+st_mode: 33188
+
+

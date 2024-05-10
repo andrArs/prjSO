@@ -1,0 +1,7 @@
+File: dir3/file6.txt
+Size: 10 bytes
+Last modified time: Wed May  8 18:24:22 2024
+Path: dir3/file6.txt
+st_mode: 33188
+
+

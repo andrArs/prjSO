@@ -1,0 +1,7 @@
+File: dir2/file4.txt
+Size: 38 bytes
+Last modified time: Thu May  9 00:01:34 2024
+Path: dir2/file4.txt
+st_mode: 33188
+
+
