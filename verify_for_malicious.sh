@@ -57,9 +57,9 @@ for keyword in "$@"; do
 done
 
 if [ $ok -eq 1 ]; then
-   echo "$file_path"
-#else 
-# echo "File '$file_path' is safe."
+    echo "$file_path"
+    else 
+    echo "SAFE"
 fi
 
 

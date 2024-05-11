@@ -1,3 +1,12 @@
+fis2.txt -> Fisier
+Drepturi: rwxrwxrwx
+File: dir1/fis2.txt
+Size: 44 bytes
+Last modified time: Sat May 11 01:06:56 2024
+Path: dir1/fis2.txt
+st_mode: 33279
+
+
 file2.txt -> Fisier
 Drepturi: rw-r--r--
 File: dir1/file2.txt

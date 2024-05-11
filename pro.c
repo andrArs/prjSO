@@ -35,7 +35,7 @@ void getMetadata(const char *path,Metadata *metadata) {
     metadata->mtime = file_stat.st_mtime;
 }   
 
-void capture_directory(const char *dir_path, const char *output_dir, const char *isolated_dir,char *snapshot_path,FILE *snapshot) {
+void capture_directory(const char *dir_path, const char *output_dir, const char *isolated_dir,char *snapshot_path,FILE *snapshot,int *fisiereCorupte) {
     DIR *dir;
     struct dirent *entry;
    // int knt=1;
@@ -130,11 +130,11 @@ char path[PATH_LENGTH];
                 char IsolatedDirPath[256];
                 snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolated_dir);
                // dup2(pfd[1], STDOUT_FILENO);
-               if (dup2(pfd[1], STDOUT_FILENO) == -1) {
+               /*if (dup2(pfd[1], STDOUT_FILENO) == -1) {
                 perror("Eroare la redirectarea stdout");
                 exit(EXIT_FAILURE);
                 }
-                
+                */
                 execl("./verify_for_malicious.sh", "./verify_for_malicious.sh", path, IsolatedDirPath, "corrupted", "dangerous", "risk", "attack", "malware", "malicious", NULL);
                 close(pfd[1]);
                 exit(0);
@@ -144,12 +144,18 @@ char path[PATH_LENGTH];
                 int bytes_read = read(pfd[0], buffer, sizeof(buffer));
                 if (bytes_read > 0) {
                     buffer[bytes_read] = '\0';
-                    printf("%s\n", buffer);
+                   // printf("%s\n", buffer);
+                   if(strcmp(buffer,"SAFE")==0){
+                    printf("File %s is safe.\n", path);
+                   }else{
+                    printf("File %s may be corrupted\n.",path);
+                    (*fisiereCorupte)++;
                     char command[PATH_LENGTH + 50];
                     snprintf(command, sizeof(command), "mv %s %s", path, isolated_dir);
-                    system(command);
+                    system(command);}
                 } else {
-                    printf("File %s is safe.\n", path);
+                    //printf("File %s is safe.\n", path);
+                    printf("Nu s-a putut citi din pipe\n.");
                 }
                 close(pfd[0]);
                
@@ -237,7 +243,7 @@ char path[PATH_LENGTH];
                 perror("Eroare la obținerea metadatelor");
             }
             if(S_ISDIR(st.st_mode)){
-            capture_directory(path, output_dir, isolated_dir,snapshot_path,snapshot);
+            capture_directory(path, output_dir, isolated_dir,snapshot_path,snapshot,fisiereCorupte);
         }
     }
      
@@ -356,11 +362,11 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
     }
 
     // Adăugăm aici procesarea fișierelor corupte prin comunicare cu pipe
-    int pipes[2];
+   /*int pipes[2];
     if (pipe(pipes) == -1) {
         perror("Eroare la crearea pipe-ului.\n");
         exit(EXIT_FAILURE);
-    }
+    }*/
     //aici creez procesele
     pid_t pid[11],wpid;
     int status;
@@ -370,6 +376,7 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
         struct stat st;
         if(stat(argv[i],&st)==0 && S_ISDIR(st.st_mode)){
             //procesul parinte
+            int fisiereCorupte=0;
 	  pid[i]=fork();
         if(pid[i]<0){
             perror("Eroare la crearea procesului copil\n");
@@ -384,13 +391,13 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
                 exit(EXIT_FAILURE);
             }
             snprintf(caleCatreSnapshot, sizeof(caleCatreSnapshot), "%s/snapshotComparare%s.txt", outputDir, argv[i]);
-             capture_directory(argv[i], outputDir, isolatedSpaceDir,caleCatreSnapshot,fisSnapshot);
+             capture_directory(argv[i], outputDir, isolatedSpaceDir,caleCatreSnapshot,fisSnapshot,&fisiereCorupte);
             fclose(fisSnapshot);
 	        printf("Snapshot for Directory %s created successfully.\n",argv[i]);
-
-	         exit(0);
+            exit(fisiereCorupte);
+	         //exit(0);
 	         }
-         else{
+        /* else{
         // Proces părinte
             close(pipes[1]); // Închidem capătul de scriere al pipe-ului în procesul părinte
             char buffer[PATH_LENGTH];
@@ -403,14 +410,16 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
         }
         } else {
             fprintf(stderr, "%s nu este un director valid\n", argv[i]);
-        }
-    }
-    
+        }*/
+    }}
+    int totalFisCor=0;
     //verific daca s-au terminat procesele
      for (int i = 5; i < argc; i++){
-    if((wpid=waitpid(-1,&status,0))>0){nr++;
+    if((wpid=waitpid(-1,&status,0))!=-1){nr++;
+    //while((wpid=waitpid(-1,&status,0))!=-1){nr++;
       if(WIFEXITED(status)){
-	printf("Child process%d terminated with PID %d and exit code %d.\n",nr,wpid,WEXITSTATUS(status));
+        totalFisCor+=WEXITSTATUS(status);
+	    printf("Child process%d terminated with PID %d and %d files potentially malicious.\n",nr,wpid,WEXITSTATUS(status));
       }
       else{
          printf("Child %d ended abnormally\n", wpid);
@@ -421,6 +430,7 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
         exit(EXIT_FAILURE);
       }
      }
+     printf("Total number of potentially malicious files found: %d\n", totalFisCor);
     
 }
 
