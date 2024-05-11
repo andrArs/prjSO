@@ -120,13 +120,14 @@ char path[PATH_LENGTH];
                 if (bytes_read==-1) {
                     printf("Nu s-a putut citi din pipe.\n");
                     exit(EXIT_FAILURE);
-                }
+                }else if (bytes_read == 0) {
+                    printf("Nimic de citit din pipe.\n");
+                    }else{
                     buffer[bytes_read] = '\0';
                     //printf("%s,%s\n", buffer,path);
-                   if(strcmp(buffer,"SAFE")==0){
-                    
+                   if(strstr(buffer,"SAFE")){
                     printf("File %s is safe.\n", path);
-                   }else{
+                   }else{printf("%s \n",buffer);
                     printf("File %s may be corrupted.\n",path);
                     (*fisiereCorupte)++;
                     /*char command[PATH_LENGTH + 50];
@@ -140,6 +141,7 @@ char path[PATH_LENGTH];
                     
                     }
                     close(pfd[0]);
+                    }
                 
                
             }
