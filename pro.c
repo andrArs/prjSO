@@ -129,12 +129,11 @@ char path[PATH_LENGTH];
                 close(pfd[0]);
                 char IsolatedDirPath[256];
                 snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolated_dir);
-               // dup2(pfd[1], STDOUT_FILENO);
-               /*if (dup2(pfd[1], STDOUT_FILENO) == -1) {
+              /* if (dup2(pfd[1], STDOUT_FILENO) == -1) {
                 perror("Eroare la redirectarea stdout");
                 exit(EXIT_FAILURE);
-                }
-                */
+                }*/
+                
                 execl("./verify_for_malicious.sh", "./verify_for_malicious.sh", path, IsolatedDirPath, "corrupted", "dangerous", "risk", "attack", "malware", "malicious", NULL);
                 close(pfd[1]);
                 exit(0);
@@ -142,22 +141,22 @@ char path[PATH_LENGTH];
                 close(pfd[1]);
                 char buffer[1024];
                 int bytes_read = read(pfd[0], buffer, sizeof(buffer));
-                if (bytes_read > 0) {
+                if (bytes_read==-1) {
+                    printf("Nu s-a putut citi din pipe.\n");
+                    exit(EXIT_FAILURE);
+                }
                     buffer[bytes_read] = '\0';
                    // printf("%s\n", buffer);
-                   if(strcmp(buffer,"SAFE")==0){
+                   if(strstr(buffer,"SAFE")==0){
                     printf("File %s is safe.\n", path);
                    }else{
-                    printf("File %s may be corrupted\n.",path);
+                    printf("File %s may be corrupted.\n",path);
                     (*fisiereCorupte)++;
                     char command[PATH_LENGTH + 50];
                     snprintf(command, sizeof(command), "mv %s %s", path, isolated_dir);
                     system(command);}
-                } else {
-                    //printf("File %s is safe.\n", path);
-                    printf("Nu s-a putut citi din pipe\n.");
-                }
-                close(pfd[0]);
+                    close(pfd[0]);
+                
                
             }
              wait(NULL);
@@ -167,7 +166,35 @@ char path[PATH_LENGTH];
        // char snapshot_path[PATH_LENGTH];
        // snprintf(snapshot_path, sizeof(snapshot_path), "%s/%d_snapshot.txt", output_dir, knt);
         //knt++;
+
         //parte asta-i pentru comparare
+
+        /*
+        FILE *snapshot_file = fopen(snapshot_path, "r");
+        if (snapshot_file != NULL) {
+            Metadata snapshot_metadata;
+            fread(&snapshot_metadata, sizeof(Metadata), 1, snapshot_file);
+            fclose(snapshot_file);
+
+            if (metadata.mode != snapshot_metadata.mode ||
+                metadata.size != snapshot_metadata.size ||
+                metadata.mtime != snapshot_metadata.mtime) {
+                printf("Modifications detected in file: %s\n", path);
+                snapshot_file = fopen(snapshot_path, "w");
+            if (snapshot_file != NULL) {
+                fwrite(&metadata, sizeof(Metadata), 1, snapshot_file);
+                fclose(snapshot_file);
+            }
+            }
+        } else{
+            snapshot_file = fopen(snapshot_path, "w");
+            if (snapshot_file != NULL) {
+                fwrite(&metadata, sizeof(Metadata), 1, snapshot_file);
+                fclose(snapshot_file);
+            }
+        }
+        */
+        
          int snapshot_file = open(snapshot_path, O_RDONLY);
         if (snapshot_file != -1)
         {
@@ -207,6 +234,8 @@ char path[PATH_LENGTH];
                 close(snapshot_file);
             }
         }
+
+        //aici creez snapshotul pt director
          struct stat st;
          if (stat(path, &st) != -1) {
                 // Afiseaza numele fisierului/directorului  
@@ -411,7 +440,8 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
         } else {
             fprintf(stderr, "%s nu este un director valid\n", argv[i]);
         }*/
-    }}
+    }
+    }
     int totalFisCor=0;
     //verific daca s-au terminat procesele
      for (int i = 5; i < argc; i++){

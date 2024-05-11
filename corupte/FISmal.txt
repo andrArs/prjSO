@@ -1,6 +1,5 @@
 acest fisier
 este
 unul 
-bun
+dangerous
 da
-jsjs

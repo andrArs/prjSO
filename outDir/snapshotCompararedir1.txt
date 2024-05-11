@@ -1,6 +1,6 @@
 File: dir1/dir11/file1.txt
-Size: 4 bytes
-Last modified time: Wed May  8 18:23:48 2024
+Size: 30 bytes
+Last modified time: Sat May 11 14:50:08 2024
 Path: dir1/dir11/file1.txt
 st_mode: 33188
 

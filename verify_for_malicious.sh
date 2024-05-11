@@ -1,14 +1,13 @@
 #!/bin/bash
 chmod 777 "$1"
+file_path=$1
+isolated_dir=$2
+shift 2
 if [ "$#" -lt 3 ]; then
     echo "Usage: $0 <file_path> <isolated_dir> <keyword1> [<keyword2> ...]"
     chmod 000 "$1"
     exit 1
 fi
-
-file_path=$1
-isolated_dir=$2
-shift 2
 
 if [ ! -f "$file_path" ]; then
     echo "Error: File '$file_path' does not exist."
@@ -52,12 +51,14 @@ for keyword in "$@"; do
         #echo "Warning: File '$file_path' may be potentially malicious (contains keyword: $keyword)."
         ok=1
         #mv "$file_path" "$isolated_dir"
-        #break
+        break
     fi
 done
 
 if [ $ok -eq 1 ]; then
     echo "$file_path"
+    chmod 000 "$1"
+    exit 1
     else 
     echo "SAFE"
 fi

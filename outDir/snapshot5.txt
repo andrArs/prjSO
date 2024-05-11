@@ -1,8 +1,8 @@
 fis2.txt -> Fisier
 Drepturi: rwxrwxrwx
 File: dir1/fis2.txt
-Size: 44 bytes
-Last modified time: Sat May 11 01:06:56 2024
+Size: 30 bytes
+Last modified time: Sat May 11 14:49:49 2024
 Path: dir1/fis2.txt
 st_mode: 33279
 
@@ -10,8 +10,8 @@ st_mode: 33279
 file2.txt -> Fisier
 Drepturi: rw-r--r--
 File: dir1/file2.txt
-Size: 2 bytes
-Last modified time: Wed May  8 18:23:30 2024
+Size: 35 bytes
+Last modified time: Sat May 11 15:01:51 2024
 Path: dir1/file2.txt
 st_mode: 33188
 
@@ -28,8 +28,8 @@ st_mode: 16877
 file1.txt -> Fisier
 Drepturi: rw-r--r--
 File: dir1/dir11/file1.txt
-Size: 4 bytes
-Last modified time: Wed May  8 18:23:48 2024
+Size: 30 bytes
+Last modified time: Sat May 11 14:50:08 2024
 Path: dir1/dir11/file1.txt
 st_mode: 33188
 
