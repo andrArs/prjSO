@@ -2,7 +2,7 @@
 chmod 777 "$1"
 file_path=$1
 isolated_dir=$2
-shift 2
+shift 1
 if [ "$#" -lt 3 ]; then
     echo "Usage: $0 <file_path> <isolated_dir> <keyword1> [<keyword2> ...]"
     chmod 000 "$1"
@@ -59,7 +59,7 @@ if [ $ok -eq 1 ]; then
     echo "$file_path"
     chmod 000 "$1"
     exit 1
-    else 
+else 
     echo "SAFE"
 fi
 

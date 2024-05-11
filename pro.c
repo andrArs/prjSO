@@ -64,43 +64,20 @@ char path[PATH_LENGTH];
 /*
        if ((metadata.mode & (S_IRWXU | S_IRWXG | S_IRWXO)) == 0) {// adica e posibil sa fie corupt
             //if (!(metadata.mode & S_IRUSR) || !(metadata.mode & S_IWUSR) || !(metadata.mode & S_IXUSR)) {
-            int pfd[2];
-               //int pid;
-                if(pipe(pfd)<0){
-                    printf("Eroare la crearea pipe ului.\n");
-                    exit(EXIT_FAILURE);
-                }
+           
             pid_t child_pid = fork();
             if (child_pid<0) {
                 perror("Procesul copil-nepot? nu s a creat cum trebuie.\n");
                 exit(-1);
             } else if (child_pid == 0) {
                 printf("Analiza fisierului: %s\n", path);
-               close(pfd[0]);//inchid capatul de citire pt ca o sa scriu in pipe
                 char IsolatedDirPath[256];
                 snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolated_dir);
                 //perror("Error executing script");
                 dup2(pfd[1], STDOUT_FILENO);
-                close(pfd[1]);//inchid si capatul utilizat
                 execl("./verify_for_malicious.sh", "./verify_for_malicious.sh", path, IsolatedDirPath, "corrupted", "dangerous", "risk", "attack", "malware", "malicious", NULL);
  
                 exit(0);
-            }else{
-                close(pfd[1]);//inchid capatul de scriere, pt ca voi citi
-                // Read from the read end of the pipe
-            char buffer[1024];
-            int bytes_read = read(pfd[0], buffer, sizeof(buffer));
-            if (bytes_read > 0) {
-                buffer[bytes_read] = '\0';
-                printf("%s\n", buffer);
-                // Move the corrupted file to the isolated directory
-                char command[PATH_LENGTH + 50];
-                snprintf(command, sizeof(command), "mv %s %s", path, isolated_dir);
-                system(command);
-            } else {
-                printf("File %s is safe.\n", path);
-            }
-                close(pfd[0]);
             }
             wait(NULL);
             /*pid_t wpid;
@@ -126,16 +103,15 @@ char path[PATH_LENGTH];
                 exit(-1);
             } else if (child_pid == 0) {
                 printf("Analiza fisierului: %s\n", path);
-                close(pfd[0]);
+                close(pfd[0]);//inchid capatul de citire pt ca o sa scriu in pipe
                 char IsolatedDirPath[256];
                 snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolated_dir);
-              /* if (dup2(pfd[1], STDOUT_FILENO) == -1) {
+               if (dup2(pfd[1], STDOUT_FILENO) == -1) {
                 perror("Eroare la redirectarea stdout");
                 exit(EXIT_FAILURE);
-                }*/
-                
+                }
                 execl("./verify_for_malicious.sh", "./verify_for_malicious.sh", path, IsolatedDirPath, "corrupted", "dangerous", "risk", "attack", "malware", "malicious", NULL);
-                close(pfd[1]);
+                close(pfd[1]);//inchid si capatul utilizat
                 exit(0);
             } else {
                 close(pfd[1]);
@@ -146,15 +122,23 @@ char path[PATH_LENGTH];
                     exit(EXIT_FAILURE);
                 }
                     buffer[bytes_read] = '\0';
-                   // printf("%s\n", buffer);
-                   if(strstr(buffer,"SAFE")==0){
+                    //printf("%s,%s\n", buffer,path);
+                   if(strcmp(buffer,"SAFE")==0){
+                    
                     printf("File %s is safe.\n", path);
                    }else{
                     printf("File %s may be corrupted.\n",path);
                     (*fisiereCorupte)++;
-                    char command[PATH_LENGTH + 50];
+                    /*char command[PATH_LENGTH + 50];
                     snprintf(command, sizeof(command), "mv %s %s", path, isolated_dir);
-                    system(command);}
+                    system(command);*/
+                    char IsolatedDirPath[256];
+                    snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolated_dir);
+                    char command[PATH_LENGTH + 50];
+                    snprintf(command, sizeof(command), "./moveCorruptedFileToDirectory.sh %s %s", path, isolated_dir);
+                    system(command);
+                    
+                    }
                     close(pfd[0]);
                 
                
