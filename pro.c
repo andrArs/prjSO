@@ -12,11 +12,11 @@
 #include <sys/wait.h>
 #include <libgen.h>
 
-#define PATH_LENGTH 1024
-#define METADATA_LENGTH 256
+#define PATH_SIZE 1024
+#define METADATA_SIZE 256
 
 typedef struct {
-    char name[PATH_LENGTH];
+    char name[PATH_SIZE];
     mode_t mode;
     off_t size;
     time_t mtime;
@@ -29,38 +29,32 @@ void getMetadata(const char *path,Metadata *metadata) {
         exit(EXIT_FAILURE);
     }
 
-    strncpy(metadata->name, path,PATH_LENGTH);
+    strncpy(metadata->name, path,PATH_SIZE);
     metadata->mode = file_stat.st_mode;
     metadata->size = file_stat.st_size;
     metadata->mtime = file_stat.st_mtime;
 }   
 
-void capture_directory(const char *dir_path, const char *output_dir, const char *isolated_dir,char *snapshot_path,FILE *snapshot,int *fisiereCorupte) {
+void processDirectory(const char *dirPath, const char *outDir, const char *isolatedDir,char *snapshotPath,FILE *snapshot,int *corruptedFiles) {
     DIR *dir;
     struct dirent *entry;
    // int knt=1;
-    if ((dir = opendir(dir_path)) == NULL) {
+    if ((dir = opendir(dirPath)) == NULL) {
         perror("Eroare la deschiderea directorului.\n");
         exit(EXIT_FAILURE);
     }
-char path[PATH_LENGTH];
+char path[PATH_SIZE];
     while ((entry = readdir(dir)) != NULL) {
         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
             continue;
         }
     
         
-        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
+        snprintf(path, sizeof(path), "%s/%s", dirPath, entry->d_name);
 
         Metadata metadata;
         getMetadata(path, &metadata);
      
-/*
-        if (S_ISDIR(metadata.mode)) {
-                    // Dacă intrarea este un director, apelăm recursiv capture_directory
-                    capture_directory(path, output_dir, isolated_dir,snapshot_path,snapshot);
-                }
-*/
 /*
        if ((metadata.mode & (S_IRWXU | S_IRWXG | S_IRWXO)) == 0) {// adica e posibil sa fie corupt
             //if (!(metadata.mode & S_IRUSR) || !(metadata.mode & S_IWUSR) || !(metadata.mode & S_IXUSR)) {
@@ -72,7 +66,7 @@ char path[PATH_LENGTH];
             } else if (child_pid == 0) {
                 printf("Analiza fisierului: %s\n", path);
                 char IsolatedDirPath[256];
-                snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolated_dir);
+                snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolatedDir);
                 //perror("Error executing script");
                 dup2(pfd[1], STDOUT_FILENO);
                 execl("./verify_for_malicious.sh", "./verify_for_malicious.sh", path, IsolatedDirPath, "corrupted", "dangerous", "risk", "attack", "malware", "malicious", NULL);
@@ -105,7 +99,7 @@ char path[PATH_LENGTH];
                 printf("Analiza fisierului: %s\n", path);
                 close(pfd[0]);//inchid capatul de citire pt ca o sa scriu in pipe
                 char IsolatedDirPath[256];
-                snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolated_dir);
+                snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolatedDir);
                if (dup2(pfd[1], STDOUT_FILENO) == -1) {
                 perror("Eroare la redirectarea stdout");
                 exit(EXIT_FAILURE);
@@ -129,14 +123,14 @@ char path[PATH_LENGTH];
                     printf("File %s is safe.\n", path);
                    }else{printf("%s \n",buffer);
                     printf("File %s may be corrupted.\n",path);
-                    (*fisiereCorupte)++;
-                    /*char command[PATH_LENGTH + 50];
-                    snprintf(command, sizeof(command), "mv %s %s", path, isolated_dir);
+                    (*corruptedFiles)++;
+                    /*char command[PATH_SIZE + 50];
+                    snprintf(command, sizeof(command), "mv %s %s", path, isolatedDir);
                     system(command);*/
                     char IsolatedDirPath[256];
-                    snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolated_dir);
-                    char command[PATH_LENGTH + 50];
-                    snprintf(command, sizeof(command), "./moveCorruptedFileToDirectory.sh %s %s", path, isolated_dir);
+                    snprintf(IsolatedDirPath, sizeof(IsolatedDirPath), "%s/", isolatedDir);
+                    char command[PATH_SIZE + 50];
+                    snprintf(command, sizeof(command), "./moveCorruptedFileToDirectory.sh %s %s", path, isolatedDir);
                     system(command);
                     
                     }
@@ -149,59 +143,60 @@ char path[PATH_LENGTH];
         }
         else{
 
-       // char snapshot_path[PATH_LENGTH];
-       // snprintf(snapshot_path, sizeof(snapshot_path), "%s/%d_snapshot.txt", output_dir, knt);
+       // char snapshotPath[PATH_SIZE];
+       // snprintf(snapshotPath, sizeof(snapshotPath), "%s/%d_snapshot.txt", outDir, knt);
         //knt++;
 
         //parte asta-i pentru comparare
 
         /*
-        FILE *snapshot_file = fopen(snapshot_path, "r");
-        if (snapshot_file != NULL) {
-            Metadata snapshot_metadata;
-            fread(&snapshot_metadata, sizeof(Metadata), 1, snapshot_file);
-            fclose(snapshot_file);
+        FILE *snapshotFile = fopen(snapshotPath, "r");
+        if (snapshotFile != NULL) {
+            Metadata snapshotMetadata;
+            fread(&snapshotMetadata, sizeof(Metadata), 1, snapshotFile);
+            fclose(snapshotFile);
 
-            if (metadata.mode != snapshot_metadata.mode ||
-                metadata.size != snapshot_metadata.size ||
-                metadata.mtime != snapshot_metadata.mtime) {
+            if (metadata.mode != snapshotMetadata.mode ||
+                metadata.size != snapshotMetadata.size ||
+                metadata.mtime != snapshotMetadata.mtime) {
                 printf("Modifications detected in file: %s\n", path);
-                snapshot_file = fopen(snapshot_path, "w");
-            if (snapshot_file != NULL) {
-                fwrite(&metadata, sizeof(Metadata), 1, snapshot_file);
-                fclose(snapshot_file);
+                snapshotFile = fopen(snapshotPath, "w");
+            if (snapshotFile != NULL) {
+                fwrite(&metadata, sizeof(Metadata), 1, snapshotFile);
+                fclose(snapshotFile);
             }
             }
         } else{
-            snapshot_file = fopen(snapshot_path, "w");
-            if (snapshot_file != NULL) {
-                fwrite(&metadata, sizeof(Metadata), 1, snapshot_file);
-                fclose(snapshot_file);
+            snapshotFile = fopen(snapshotPath, "w");
+            if (snapshotFile != NULL) {
+                fwrite(&metadata, sizeof(Metadata), 1, snapshotFile);
+                fclose(snapshotFile);
             }
         }
         */
         
-         int snapshot_file = open(snapshot_path, O_RDONLY);
-        if (snapshot_file != -1)
+         int snapshotFile = open(snapshotPath, O_RDONLY);
+        if (snapshotFile != -1)
         {
-            Metadata snapshot_metadata;
-            read(snapshot_file, &snapshot_metadata, sizeof(Metadata));
-            close(snapshot_file);
+            Metadata snapshotMetadata;
+            read(snapshotFile, &snapshotMetadata, sizeof(Metadata));
+            close(snapshotFile);
 
-            if (metadata.mode != snapshot_metadata.mode ||
-                metadata.size != snapshot_metadata.size ||
-                metadata.mtime != snapshot_metadata.mtime)
+            if (metadata.mode != snapshotMetadata.mode ||
+                metadata.size != snapshotMetadata.size ||
+                metadata.mtime != snapshotMetadata.mtime)
             {//printf("Modifications detected in file: %s\n", path);
-                snapshot_file = open(snapshot_path, O_WRONLY | O_CREAT | O_TRUNC, 0644); // Deschide fișierul de snapshot pentru scriere, creându-l dacă nu există
-                if (snapshot_file != -1)
+                snapshotFile = open(snapshotPath, O_WRONLY | O_CREAT | O_TRUNC, 0644); 
+                // Deschide fisierul de snapshot pentru scriere si il creaza daca nu exista
+                if (snapshotFile != -1)
                 {
-                    dprintf(snapshot_file, "File: %s\n", metadata.name);
-                    dprintf(snapshot_file, "Size: %ld bytes\n", (long)metadata.size);
-                    dprintf(snapshot_file, "Last modified time: %s", ctime(&metadata.mtime));
-                    dprintf(snapshot_file, "Path: %s\n", path);
-                    dprintf(snapshot_file, "st_mode: %d\n\n\n", metadata.mode);
-                    close(snapshot_file);
-                    //printf("Snapshot for Directory %s updated successfully.\n", dir_path);
+                    dprintf(snapshotFile, "File: %s\n", metadata.name);
+                    dprintf(snapshotFile, "Size: %ld bytes\n", (long)metadata.size);
+                    dprintf(snapshotFile, "Last modified time: %s", ctime(&metadata.mtime));
+                    dprintf(snapshotFile, "Path: %s\n", path);
+                    dprintf(snapshotFile, "st_mode: %d\n\n\n", metadata.mode);
+                    close(snapshotFile);
+                    //printf("Snapshot for Directory %s updated successfully.\n", dirPath);
                      
                 }
                 else
@@ -212,12 +207,13 @@ char path[PATH_LENGTH];
         }
         else
         {
-            int snapshot_file = open(snapshot_path, O_WRONLY | O_CREAT | O_TRUNC, 0644); // Deschide fișierul de snapshot pentru scriere, creându-l dacă nu există
-            if (snapshot_file != -1)
+            int snapshotFile = open(snapshotPath, O_WRONLY | O_CREAT | O_TRUNC, 0644); 
+            // Deschide fisierul de snapshot pentru scriere si il creaza daca nu exista
+            if (snapshotFile != -1)
             {
 
-                write(snapshot_file, &metadata, sizeof(Metadata));
-                close(snapshot_file);
+                write(snapshotFile, &metadata, sizeof(Metadata));
+                close(snapshotFile);
             }
         }
 
@@ -234,7 +230,7 @@ char path[PATH_LENGTH];
                     fprintf(snapshot, "Fisier\n");
 		    
                 }
-                // Afiseaza drepturile fișierului/directorului
+                // Afiseaza drepturile fisierului/directorului
                 fprintf(snapshot, "Drepturi: ");
                 fprintf(snapshot, (st.st_mode & S_IRUSR) ? "r" : "-");
                 fprintf(snapshot, (st.st_mode & S_IWUSR) ? "w" : "-");
@@ -246,7 +242,7 @@ char path[PATH_LENGTH];
                 fprintf(snapshot, (st.st_mode & S_IWOTH) ? "w" : "-");
                 fprintf(snapshot, (st.st_mode & S_IXOTH) ? "x" : "-");
                 fprintf(snapshot, "\n");
-                // Afiseaza metadatele (de exemplu, dimensiunea, data ultimei modificări)
+                // Afiseaza metadatele (de exemplu, dimensiunea, data ultimei modificari)
                     fprintf(snapshot, "File: %s\n", metadata.name);
                     fprintf(snapshot, "Size: %ld bytes\n", (long)metadata.size);
                     fprintf(snapshot, "Last modified time: %s", ctime(&metadata.mtime));
@@ -254,11 +250,11 @@ char path[PATH_LENGTH];
                     fprintf(snapshot, "st_mode: %d\n\n\n", metadata.mode);
                 //fprintf(snapshot, "Dimensiune: %ld bytes, Ultima modificare: %s\n", st.st_size, ctime(&st.st_mtime));
             } else {
-                // Afiseaza eroarea daca nu s-au putut obține metadatele
-                perror("Eroare la obținerea metadatelor");
+                // Afiseaza eroarea daca nu s-au putut obtine metadatele
+                perror("Eroare la obtinerea metadatelor");
             }
             if(S_ISDIR(st.st_mode)){
-            capture_directory(path, output_dir, isolated_dir,snapshot_path,snapshot,fisiereCorupte);
+            processDirectory(path, outDir, isolatedDir,snapshotPath,snapshot,corruptedFiles);
         }
     }
      
@@ -376,7 +372,7 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
         exit(EXIT_FAILURE);
     }
 
-    // Adăugăm aici procesarea fișierelor corupte prin comunicare cu pipe
+    // Adăugăm aici procesarea fisierelor corupte prin comunicare cu pipe
    /*int pipes[2];
     if (pipe(pipes) == -1) {
         perror("Eroare la crearea pipe-ului.\n");
@@ -391,8 +387,8 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
         struct stat st;
         if(stat(argv[i],&st)==0 && S_ISDIR(st.st_mode)){
             //procesul parinte
-            int fisiereCorupte=0;
-	  pid[i]=fork();
+            int corruptedFiles=0;
+	        pid[i]=fork();
         if(pid[i]<0){
             perror("Eroare la crearea procesului copil\n");
             exit(-1);
@@ -402,20 +398,20 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
             snprintf(caleCatreSnapshot, sizeof(caleCatreSnapshot), "%s/snapshot%d.txt", outputDir, i);
             FILE *fisSnapshot = fopen(caleCatreSnapshot, "w");
             if (fisSnapshot == NULL) {
-                fprintf(stderr, "Nu s-a deschis corect fișierul pentru snapshot %d\n", i);
+                fprintf(stderr, "Nu s-a deschis corect fisierul pentru snapshot %d\n", i);
                 exit(EXIT_FAILURE);
             }
             snprintf(caleCatreSnapshot, sizeof(caleCatreSnapshot), "%s/snapshotComparare%s.txt", outputDir, argv[i]);
-             capture_directory(argv[i], outputDir, isolatedSpaceDir,caleCatreSnapshot,fisSnapshot,&fisiereCorupte);
+            processDirectory(argv[i], outputDir, isolatedSpaceDir,caleCatreSnapshot,fisSnapshot,&corruptedFiles);
             fclose(fisSnapshot);
 	        printf("Snapshot for Directory %s created successfully.\n",argv[i]);
-            exit(fisiereCorupte);
+            exit(corruptedFiles);
 	         //exit(0);
 	         }
         /* else{
         // Proces părinte
             close(pipes[1]); // Închidem capătul de scriere al pipe-ului în procesul părinte
-            char buffer[PATH_LENGTH];
+            char buffer[PATH_SIZE];
             ssize_t bytes_read;
             while ((bytes_read = read(pipes[0], buffer, sizeof(buffer))) > 0) {
                 buffer[bytes_read] = '\0';
@@ -428,18 +424,18 @@ void procesareaArgumentelor(int argc,char *argv[],char *outputDir,char *isolated
         }*/
     }
     }
+
     int totalFisCor=0;
     //verific daca s-au terminat procesele
      for (int i = 5; i < argc; i++){
     if((wpid=waitpid(-1,&status,0))!=-1){nr++;
-    //while((wpid=waitpid(-1,&status,0))!=-1){nr++;
-      if(WIFEXITED(status)){
-        totalFisCor+=WEXITSTATUS(status);
-	    printf("Child process%d terminated with PID %d and %d files potentially malicious.\n",nr,wpid,WEXITSTATUS(status));
-      }
-      else{
-         printf("Child %d ended abnormally\n", wpid);
-      }
+        if(WIFEXITED(status)){
+            totalFisCor+=WEXITSTATUS(status);
+            printf("Child process%d terminated with PID %d and %d files potentially malicious.\n",nr,wpid,WEXITSTATUS(status));
+        }
+        else{
+            printf("Child %d ended abnormally\n", wpid);
+        }
       }
       else{
         perror("Error waiting for child process");
